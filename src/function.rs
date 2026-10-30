@@ -362,7 +362,7 @@ mod tests {
         assert!(found.is_some());
         let wamrc_path = found.unwrap();
 
-        let wamrc_output = Command::new(wamrc_path)
+        let wamrc_output = Command::new(&wamrc_path)
             .arg("--bounds-checks=1")
             .arg("-o")
             .arg(aot_dest.clone())
@@ -371,7 +371,13 @@ mod tests {
             .stdout(Stdio::piped())
             .output()
             .unwrap();
-        assert!(String::from_utf8_lossy(&wamrc_output.stdout).contains("Compile success"));
+        assert!(
+            String::from_utf8_lossy(&wamrc_output.stdout).contains("Compile success"),
+            "{} failed: {}{}",
+            wamrc_path.display(),
+            String::from_utf8_lossy(&wamrc_output.stdout),
+            String::from_utf8_lossy(&wamrc_output.stderr)
+        );
 
         let module = Module::from_file(&runtime, aot_dest.as_path());
         assert!(module.is_ok());
