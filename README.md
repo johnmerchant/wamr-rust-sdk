@@ -1,5 +1,27 @@
 # wamr-rust-sdk
 
+> **This fork** ([johnmerchant/wamr-rust-sdk](https://github.com/johnmerchant/wamr-rust-sdk))
+> is what [neochumby](https://github.com/johnmerchant/neochumby) builds WAMR
+> with, for the Chumby Classic (an ARM926EJ-S, ARMv5TE). It differs from
+> upstream in `wamr-sys` (and in one test, run only with `wamrc`):
+>
+> - **WAMR is pinned to the WAMR-2.4.5 release** (`crates/wamr-sys/wasm-micro-runtime`).
+> - **wamrc is optional:** the `wamrc` feature (off by default) builds it,
+>   and only then is LLVM (`LLVM_LIB_CFG_PATH`) needed.
+> - **WAMR's features are cargo features:** `aot`, `fast-interp`, `simd`
+>   and `wasi`, all in `default`, so the default build is upstream's.
+>   neochumby uses `default-features = false, features = ["aot", "fast-interp"]`.
+> - **`WAMR_BUILD_TARGET` defaults to `ARMV5TE` for an `armv5te` target,**
+>   whose instructions WAMR's `ARM` would overstep.
+> - **`crates/wamr-sys/patches/`** holds patches to WAMR (DEP-3 headers).
+>   `build.rs` applies them to a copy of WAMR's source in `OUT_DIR` and builds
+>   that; the submodule is never changed, and a patch that no longer applies
+>   fails the build. The one patch today makes the fast interpreter's loader
+>   store handler addresses alignment-safely, which an ARMv5 needs.
+> - **The bindings are generated freestanding** (`-ffreestanding`), so they
+>   generate when cross-compiling without the target's C headers.
+
+
 ## WAMR Rust SDK
 
 ### Overview

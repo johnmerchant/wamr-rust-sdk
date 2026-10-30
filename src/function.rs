@@ -303,6 +303,8 @@ mod tests {
         println!("{:?}", result.unwrap());
     }
 
+    // Compiles its module with the wamrc this crate builds.
+    #[cfg(feature = "wamrc")]
     #[test]
     fn test_func_in_multi_v128_return() {
         let runtime = Runtime::new().unwrap();
