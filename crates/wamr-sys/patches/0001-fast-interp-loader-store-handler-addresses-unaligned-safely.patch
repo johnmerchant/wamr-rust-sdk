@@ -1,0 +1,68 @@
+Description: fast interpreter: store handler addresses alignment-safely in the loader
+ Rewriting select for i64 and f64 operands (and select_t), the fast
+ interpreter's loader patches the handler's address into compiled code
+ with a plain *(uint32 *)(p_code_compiled_tmp - sizeof(uint32)) = ...,
+ but that code is only 2-byte aligned. An ARMv5 (the Chumby's
+ ARM926EJ-S) ignores the low bits of an unaligned STR's address, so the
+ address lands 2 bytes off and a later dispatch jumps to garbage
+ (SIGILL, in Thumb state). QEMU does the store as an ARMv6 would, so
+ the emulator never shows it. The three stores go through memcpy
+ instead, which is byte stores where the alignment isn't known.
+Author: John Merchant <john@johnmerchant.dev>
+Upstream-Status: Inappropriate [AI generated code]
+Signed-off-by: John Merchant <john@johnmerchant.dev>
+Claude-Session: https://claude.ai/code/session_01B1fN5Fc77Z6fVVe4rWJxPT
+---
+diff --git a/core/iwasm/interpreter/wasm_loader.c b/core/iwasm/interpreter/wasm_loader.c
+index d3f4720..562c672 100644
+--- a/core/iwasm/interpreter/wasm_loader.c
++++ b/core/iwasm/interpreter/wasm_loader.c
+@@ -4,6 +4,14 @@
+  */
+ 
+ #include "wasm_loader.h"
++
++/* Stores a 32-bit value where it may be only 2-byte aligned: an ARMv5
++   ignores the low bits of an unaligned STR's address. */
++#define STORE_U32_UNALIGNED_SAFE(p, v)          \
++    do {                                        \
++        uint32 store_u32_v_ = (uint32)(v);      \
++        memcpy((p), &store_u32_v_, sizeof(uint32)); \
++    } while (0)
+ #include "bh_platform.h"
+ #include "wasm.h"
+ #include "wasm_opcode.h"
+@@ -13201,9 +13209,8 @@ re_scan:
+                                            - sizeof(int32)) = offset;
+ #else
+                                 /* emit uint32 label address in 32-bit target */
+-                                *(uint32 *)(p_code_compiled_tmp
+-                                            - sizeof(uint32)) =
+-                                    (uint32)(uintptr_t)handle_table[opcode_tmp];
++                                STORE_U32_UNALIGNED_SAFE(p_code_compiled_tmp
++                                            - sizeof(uint32), (uint32)(uintptr_t)handle_table[opcode_tmp]);
+ #endif /* end of WASM_CPU_SUPPORTS_UNALIGNED_ADDR_ACCESS */
+ #else  /* else of WASM_ENABLE_LABELS_AS_VALUES */
+ #if WASM_CPU_SUPPORTS_UNALIGNED_ADDR_ACCESS != 0
+@@ -13237,9 +13244,8 @@ re_scan:
+                                            - sizeof(int32)) = offset;
+ #else
+                                 /* emit uint32 label address in 32-bit target */
+-                                *(uint32 *)(p_code_compiled_tmp
+-                                            - sizeof(uint32)) =
+-                                    (uint32)(uintptr_t)handle_table[opcode_tmp];
++                                STORE_U32_UNALIGNED_SAFE(p_code_compiled_tmp
++                                            - sizeof(uint32), (uint32)(uintptr_t)handle_table[opcode_tmp]);
+ #endif /* end of WASM_CPU_SUPPORTS_UNALIGNED_ADDR_ACCESS */
+ #else  /* else of WASM_ENABLE_LABELS_AS_VALUES */
+ #if WASM_CPU_SUPPORTS_UNALIGNED_ADDR_ACCESS != 0
+@@ -13374,8 +13380,7 @@ re_scan:
+                             offset;
+ #else
+                         /* emit uint32 label address in 32-bit target */
+-                        *(uint32 *)(p_code_compiled_tmp - sizeof(uint32)) =
+-                            (uint32)(uintptr_t)handle_table[opcode_tmp];
++                        STORE_U32_UNALIGNED_SAFE(p_code_compiled_tmp - sizeof(uint32), (uint32)(uintptr_t)handle_table[opcode_tmp]);
+ #endif
+ #endif /* end of WASM_CPU_SUPPORTS_UNALIGNED_ADDR_ACCESS */
+ #else  /* else of WASM_ENABLE_LABELS_AS_VALUES */

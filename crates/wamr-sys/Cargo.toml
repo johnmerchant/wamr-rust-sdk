@@ -21,6 +21,7 @@ include = [
     "/wasm-micro-runtime/core/config.h",
     "/wasm-micro-runtime/core/version.h",
     "/README.md",
+    "/patches",
 ]
 
 [dependencies]
@@ -29,8 +30,19 @@ include = [
 bindgen = "0.73"
 cc = "1.2"
 cmake = "0.1"
+# Applies patches/ to a copy of WAMR's source.
+diffy = "0.4"
 
 [features]
+# What was always built: AOT, the fast interpreter, SIMD and WASI.
+default = ["aot", "fast-interp", "simd", "wasi"]
+aot = []
+fast-interp = []
+simd = []
+wasi = []
+# Builds wamrc, the AOT compiler, for the build machine: needs LLVM
+# (LLVM_LIB_CFG_PATH).
+wamrc = []
 custom-section = []
 dump-call-stack = []
 esp-idf = []

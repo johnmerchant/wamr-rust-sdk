@@ -106,7 +106,7 @@ jobs:
           sudo apt-get install -y llvm-18-dev libclang-18-dev libcurl4-openssl-dev libedit-dev
 
       - name: Run test cases
-        run: cargo test --lib
+        run: cargo test --lib --features wamrc
 
       - name: Run test cases sequentially
-        run: cargo test --lib -- --ignored --test-threads 1
+        run: cargo test --lib --features wamrc -- --ignored --test-threads 1
